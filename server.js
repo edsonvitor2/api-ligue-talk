@@ -98,7 +98,7 @@ app.get('/relatorio-vendas-maio', async (req, res) => {
             total_Vendas_Habilitadas: e.vns_nome === 'HABILITADO' ? 1 : 0,
             data_cadastro: extrairData(e.vnd_data_cadastro),
             data_instalacao: extrairData(e.vnd_data_instalacao),
-            valor: e.vnp_valor || 0 // Default para 0 se não existir
+            valor: (e.vnp_valor / 100).toFixed(2) || '0.00' // Converte para decimal e formata
         }));
 
         res.json({
