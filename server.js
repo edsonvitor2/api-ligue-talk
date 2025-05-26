@@ -98,7 +98,7 @@ app.get('/relatorio-vendas-maio', async (req, res) => {
             total_Vendas_Habilitadas: e.vns_nome === 'HABILITADO' ? 1 : 0,
             data_cadastro: extrairData(e.vnd_data_cadastro),
             data_instalacao: extrairData(e.vnd_data_instalacao),
-            valor: formatarParaReal(e.vnp_valor || 0) // Default para 0 se não existir
+            valor: e.vnp_valor || 0 // Default para 0 se não existir
         }));
 
         res.json({
@@ -151,6 +151,7 @@ function extrairData(dataOriginal) {
 function formatarParaReal(valor) {
     if (isNaN(parseFloat(valor))) return 'R$ 0,00';
     // Implemente sua lógica existente de formatação aqui
+    console.log()
     return `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`;
 }
   
