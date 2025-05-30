@@ -6,7 +6,7 @@ const statusWhats = '346,342,348,345,341,347,427';
 
 // Configurações
 const CONFIG = {
-  TOKEN: 'd50f7a0e-2b04-47b7-8f8a-e9f5d8284b14',
+  TOKEN: 'd50f7a0e-2b04-47b7-8f8a-e9f5d8284b14', 
   COMPANY_ID: '301',
   API_URL: 'https://sistema.liguetalk.com.br/index.php/API_control/sales_report_v1',
 };
@@ -161,6 +161,70 @@ app.get('/', (req, res) => {
     <h1>API de Relatórios Liguetalk</h1>
   `);
 });
+
+// Adicione esta nova rota após a rota '/relatorio-vendas-maio'
+// server.js (ou app.js, dependendo do nome do seu arquivo)
+app.get('/relatorio-meta-ads', async (req, res) => {
+    try {
+        const response = await fetch(`https://graph.facebook.com/v22.0/act_1536376777207697/insights?time_increment=1&time_range(%22since%22%222024-09-01%22%2C%22until%22%22today%22)&level=campaign&fields=campaign_name%2Cimpressions%2Cinline_link_clicks%2Ccpc%2Cctr%2Cspend%2Cactions.action_type(messaging_conversation_started)&access_token=EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erro na API do Meta: ${response.status} - ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        const campaigns = data.data || [];
+
+        const relatorio = campaigns.map(campaign => {
+            const actions = Array.isArray(campaign.actions) ? campaign.actions : [];
+
+            const leadsAction = actions.find(action =>
+                action.action_type === 'onsite_conversion.messaging_conversation_started_7d' ||
+                action.action_type === 'onsite_conversion.total_messaging_connection'
+            );
+
+            const leads = leadsAction ? parseInt(leadsAction.value) : 0;
+            const spend = parseFloat(campaign.spend || '0');
+
+            return {
+                investimento: spend.toFixed(2),
+                cliques: parseInt(campaign.inline_link_clicks || '0'),
+                custo_clique: parseFloat(campaign.cpc || '0').toFixed(4),
+                leads,
+                custo_lead: leads > 0 ? (spend / leads).toFixed(2) : '0.00',
+                campanha: campaign.campaign_name || 'Sem Nome',
+                ctr: parseFloat(campaign.ctr || '0').toFixed(2)
+            };
+        });
+
+        res.json({
+            success: true,
+            data: relatorio,
+            periodo: {
+                start_date: '2024-09-01',
+                end_date: 'today'
+            },
+            metadata: {
+                total_campanhas: relatorio.length,
+                total_investido: relatorio.reduce((sum, item) => sum + parseFloat(item.investimento), 0).toFixed(2),
+                total_leads: relatorio.reduce((sum, item) => sum + item.leads, 0)
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar dados do Meta Ads',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    }
+});
+
 
 // Inicia o servidor
 app.listen(PORT, () => {
