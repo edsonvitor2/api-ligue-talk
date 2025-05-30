@@ -196,7 +196,9 @@ app.get('/relatorio-meta-ads', async (req, res) => {
                 leads,
                 custo_lead: leads > 0 ? (spend / leads).toFixed(2) : '0.00',
                 campanha: campaign.campaign_name || 'Sem Nome',
-                ctr: parseFloat(campaign.ctr || '0').toFixed(2)
+                ctr: parseFloat(campaign.ctr || '0').toFixed(2),
+                data_inicio: campaign.date_start,
+                data_fim: campaign.date_stop
             };
         });
 
