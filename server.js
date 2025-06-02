@@ -166,25 +166,7 @@ app.get('/', (req, res) => {
 // server.js (ou app.js, dependendo do nome do seu arquivo)
 app.get('/relatorio-meta-ads', async (req, res) => {
     try {
-        // 1. Definir parâmetros de data (com validação)
-        const since = req.query.since || '2024-09-01';
-        const until = req.query.until || new Date().toISOString().split('T')[0]; // Data atual no formato YYYY-MM-DD
-        
-        // 2. Formatar corretamente o time_range
-        const timeRange = {
-            since,
-            until
-        };
-
-        // 3. Construir URL corretamente codificada
-        const url = new URL(`https://graph.facebook.com/v22.0/act_1536376777207697/insights`);
-        url.searchParams.append('time_increment', '1');
-        url.searchParams.append('time_range', JSON.stringify(timeRange));
-        url.searchParams.append('level', 'campaign');
-        url.searchParams.append('fields', 'campaign_name,impressions,inline_link_clicks,cpc,ctr,spend,actions.action_type(messaging_conversation_started),date_start,date_stop');
-        url.searchParams.append('access_token', 'EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD');
-
-        const response = await fetch(url.toString(), {
+        const response = await fetch(`https://graph.facebook.com/v22.0/act_1536376777207697/insights?time_increment=1&time_range(%22since%22%222024-09-01%22%2C%22until%22%222025-06-01%22)&level=campaign&fields=campaign_name%2Cimpressions%2Cinline_link_clicks%2Ccpc%2Cctr%2Cspend%2Cactions.action_type(messaging_conversation_started)&access_token=EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD}`, {
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         });
@@ -215,8 +197,8 @@ app.get('/relatorio-meta-ads', async (req, res) => {
                 custo_lead: leads > 0 ? (spend / leads).toFixed(2) : '0.00',
                 campanha: campaign.campaign_name || 'Sem Nome',
                 ctr: parseFloat(campaign.ctr || '0').toFixed(2),
-                data_inicio: campaign.date_start || since,  // Fallback to requested date
-                data_fim: campaign.date_stop || until      // Fallback to requested date
+                data_inicio: campaign.date_start,
+                data_fim: campaign.date_stop
             };
         });
 
@@ -224,8 +206,8 @@ app.get('/relatorio-meta-ads', async (req, res) => {
             success: true,
             data: relatorio,
             periodo: {
-                start_date: since,
-                end_date: until
+                start_date: '2024-09-01',
+                end_date: 'today'
             },
             metadata: {
                 total_campanhas: relatorio.length,
