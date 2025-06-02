@@ -166,19 +166,45 @@ app.get('/', (req, res) => {
 // server.js (ou app.js, dependendo do nome do seu arquivo)
 app.get('/relatorio-meta-ads', async (req, res) => {
     try {
-        const response = await fetch(`https://graph.facebook.com/v22.0/act_1536376777207697/insights?time_increment=1&time_range(%22since%22%222024-09-01%22%2C%22until%22%222025-06-01%22)&level=campaign&fields=campaign_name%2Cimpressions%2Cinline_link_clicks%2Ccpc%2Cctr%2Cspend%2Cactions.action_type(messaging_conversation_started)&access_token=EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD}`, {
-            method: 'GET',
-            headers: { 'Accept': 'application/json' }
+        // Configurações iniciais
+        const accessToken = 'EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD';
+        const baseUrl = `https://graph.facebook.com/v22.0/act_1536376777207697/insights`;
+        
+        const params = new URLSearchParams({
+            time_increment: '1',
+            time_range: JSON.stringify({ since: '2025-04-01', until: '2025-06-30' }),
+            level: 'campaign',
+            fields: 'campaign_name,impressions,inline_link_clicks,cpc,ctr,spend,actions.action_type(messaging_conversation_started)',
+            access_token: accessToken,
+            limit: '250' // Aumentar o limite por página para reduzir paginação
         });
 
-        if (!response.ok) {
-            throw new Error(`Erro na API do Meta: ${response.status} - ${await response.text()}`);
+        let allCampaigns = [];
+        let nextUrl = `${baseUrl}?${params.toString()}`;
+
+        // Loop para lidar com paginação
+        while (nextUrl) {
+            const response = await fetch(nextUrl, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro na API do Meta: ${response.status} - ${await response.text()}`);
+            }
+
+            const data = await response.json();
+            allCampaigns = allCampaigns.concat(data.data || []);
+
+            // Verificar se há mais páginas
+            nextUrl = data.paging?.next || null;
+            
+            // Pequena pausa para evitar rate limiting
+            if (nextUrl) await new Promise(resolve => setTimeout(resolve, 200));
         }
 
-        const data = await response.json();
-        const campaigns = data.data || [];
-
-        const relatorio = campaigns.map(campaign => {
+        // Processar os dados
+        const relatorio = allCampaigns.map(campaign => {
             const actions = Array.isArray(campaign.actions) ? campaign.actions : [];
 
             const leadsAction = actions.find(action =>
@@ -206,8 +232,8 @@ app.get('/relatorio-meta-ads', async (req, res) => {
             success: true,
             data: relatorio,
             periodo: {
-                start_date: '2024-09-01',
-                end_date: 'today'
+                start_date: '2025-04-01',
+                end_date: '2025-06-30'
             },
             metadata: {
                 total_campanhas: relatorio.length,
@@ -226,7 +252,6 @@ app.get('/relatorio-meta-ads', async (req, res) => {
         });
     }
 });
-
 
 // Inicia o servidor
 app.listen(PORT, () => {
