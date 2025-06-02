@@ -166,25 +166,25 @@ app.get('/', (req, res) => {
 // server.js (ou app.js, dependendo do nome do seu arquivo)
 app.get('/relatorio-meta-ads', async (req, res) => {
     try {
-        // Get dates from query parameters or use defaults
+        // 1. Definir parâmetros de data (com validação)
         const since = req.query.since || '2024-09-01';
-        const until = req.query.until || 'today';
+        const until = req.query.until || new Date().toISOString().split('T')[0]; // Data atual no formato YYYY-MM-DD
         
-        // Properly format time_range parameter
-        const timeRange = encodeURIComponent(JSON.stringify({
+        // 2. Formatar corretamente o time_range
+        const timeRange = {
             since,
             until
-        }));
+        };
 
-        const url = `https://graph.facebook.com/v22.0/act_1536376777207697/insights?` +
-            `time_increment=1&` +
-            `time_range=${timeRange}&` +
-            `level=campaign&` +
-            `fields=campaign_name,impressions,inline_link_clicks,cpc,ctr,spend,` +
-            `actions.action_type(messaging_conversation_started),date_start,date_stop&` +
-            `access_token=EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD`;
+        // 3. Construir URL corretamente codificada
+        const url = new URL(`https://graph.facebook.com/v22.0/act_1536376777207697/insights`);
+        url.searchParams.append('time_increment', '1');
+        url.searchParams.append('time_range', JSON.stringify(timeRange));
+        url.searchParams.append('level', 'campaign');
+        url.searchParams.append('fields', 'campaign_name,impressions,inline_link_clicks,cpc,ctr,spend,actions.action_type(messaging_conversation_started),date_start,date_stop');
+        url.searchParams.append('access_token', 'EAARKZCmz27gABO56dE23gs36QL3bUDmxV4s4s9ZCRv4qF7A4QdS20yQdeYc0wYweJV3pmvSNjsByPhWpJS2jgFVpqX7uELtWWqKgrkgcYnkL9KheNRwJRsIMQM8ZCYDKFyYmCx4ZAqzZAidA0ZBOK7fXwgdAh8GNRv22VxaWbvsOZCcWPwxZC36QDji65ZC0qqamrHgZDZD');
 
-        const response = await fetch(url, {
+        const response = await fetch(url.toString(), {
             method: 'GET',
             headers: { 'Accept': 'application/json' }
         });
