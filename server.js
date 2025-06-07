@@ -57,8 +57,11 @@ function extrairData(dataString) {
 app.get('/relatorio-vendas-maio', async (req, res) => {
     try {
         // Validação das datas
-        const startDate = req.query.start_date ? validateDate(req.query.start_date) : '2025-05-01';
-        const endDate = req.query.end_date ? validateDate(req.query.end_date) : '2025-05-31';
+        const { start_date, end_date } = req.query;
+
+        // Define as datas padrão se não forem informadas
+        const startDate = start_date || '2025-05-01';
+        const endDate = end_date || '2025-05-31';
         
         // Verifica se a data final é maior que a inicial
         if (new Date(endDate) < new Date(startDate)) {
@@ -67,6 +70,8 @@ app.get('/relatorio-vendas-maio', async (req, res) => {
                 message: 'Data final não pode ser anterior à data inicial'
             });
         }
+
+        console.log(startDate,endDate)
 
         const params = new URLSearchParams({
             company_id: CONFIG.COMPANY_ID,
